@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iCloud カレンダー</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>iCloud カレンダー</h1>
+      <div id="calendar-legend"></div>
+    </div>
+  </header>
+
+  <main>
+    <div id="calendar"></div>
+  </main>
+
+  <div id="event-modal" class="modal hidden">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <h2 id="modal-title"></h2>
+      <div class="modal-body">
+        <p id="modal-datetime"></p>
+        <p id="modal-calendar"></p>
+        <p id="modal-location"></p>
+        <p id="modal-description"></p>
+      </div>
+    </div>
+  </div>
+  <div id="modal-overlay" class="hidden" onclick="closeModal()"></div>
+
+  <div id="error-bar" class="error-bar hidden">
+    <span id="error-message"></span>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales/ja.global.min.js"></script>
+  <script>window.CALENDAR_BASE = "{{ url_for('index') }}";</script>
+  <script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+</body>
+</html>

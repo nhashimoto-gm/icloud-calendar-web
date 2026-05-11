@@ -1,0 +1,18 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# 認証情報（絶対にコミットしない）
+.cal_*
+!.cal_example
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# エディタ
+.vscode/
+*.swp
