@@ -7,6 +7,44 @@ let suggestionCache = null;
 let suggestionsLoading = false;
 let selectedSuggestionIndex = -1;
 
+let modalOpen = false;
+let highlightClearTimer = null;
+let mouseLeaveTimer = null;
+
+const isTouch = () => window.matchMedia('(pointer: coarse)').matches;
+
+function isRelatedTitle(t1, t2) {
+  if (!t1 || !t2) return false;
+  if (t1 === t2) return true;
+  const re = /[\s　、。・「」【】（）\-_\/,\.！？]+/;
+  const set2 = new Set(t2.split(re).filter(w => w.length >= 2));
+  if (t1.split(re).some(w => w.length >= 2 && set2.has(w))) return true;
+  const [shorter, longer] = t1.length <= t2.length ? [t1, t2] : [t2, t1];
+  return shorter.length >= 3 && longer.includes(shorter);
+}
+
+function highlightRelated(targetEvent) {
+  const targetTitle = targetEvent.title.toLowerCase();
+  document.querySelectorAll('#calendar [data-ev-title]').forEach(function (el) {
+    const elTitle = el.dataset.evTitle;
+    if (isRelatedTitle(targetTitle, elTitle)) {
+      el.classList.add('fc-event-highlight');
+      el.classList.remove('fc-event-dim');
+    } else {
+      el.classList.add('fc-event-dim');
+      el.classList.remove('fc-event-highlight');
+    }
+  });
+  document.getElementById('calendar').classList.add('fc-has-highlight');
+}
+
+function clearHighlight() {
+  document.getElementById('calendar').classList.remove('fc-has-highlight');
+  document.querySelectorAll('.fc-event-highlight, .fc-event-dim').forEach(function (el) {
+    el.classList.remove('fc-event-highlight', 'fc-event-dim');
+  });
+}
+
 function loadSuggestions() {
   if (suggestionCache !== null || suggestionsLoading) return;
   suggestionsLoading = true;
@@ -222,6 +260,12 @@ function updateThemeButton(isDark) {
 document.addEventListener("DOMContentLoaded", function () {
   updateThemeButton(document.documentElement.classList.contains("dark"));
 
+  // 凡例の外をクリックしたら全て閉じる
+  document.addEventListener("click", function () {
+    document.querySelectorAll("#calendar-legend .legend-item.expanded")
+            .forEach(el => el.classList.remove("expanded"));
+  });
+
   const searchInput = document.getElementById("search-input");
   if (searchInput) {
     searchInput.addEventListener("input", function () {
@@ -267,17 +311,17 @@ document.addEventListener("DOMContentLoaded", function () {
   const mobileToolbar = {
     left:   "prev,next",
     center: "title",
-    right:  "dayGridMonth,listWeek",
+    right:  "dayGridMonth,listMonth",
   };
   const desktopToolbar = {
     left:   "prev,next today",
     center: "title",
-    right:  "dayGridMonth,timeGridWeek,timeGridDay,listWeek toggleNight",
+    right:  "dayGridMonth,timeGridWeek,timeGridDay,listMonth toggleNight",
   };
 
   const calendar = new FullCalendar.Calendar(calendarEl, {
     locale: "ja",
-    initialView: isMobile() ? "listWeek" : "dayGridMonth",
+    initialView: isMobile() ? "listMonth" : "dayGridMonth",
     headerToolbar: isMobile() ? mobileToolbar : desktopToolbar,
     buttonText: {
       today: "今日",
@@ -330,7 +374,27 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     },
 
+    eventDidMount: function (info) {
+      info.el.dataset.evTitle = info.event.title.toLowerCase();
+    },
+
+    eventMouseEnter: function (info) {
+      if (mouseLeaveTimer) { clearTimeout(mouseLeaveTimer); mouseLeaveTimer = null; }
+      if (!modalOpen) highlightRelated(info.event);
+    },
+
+    eventMouseLeave: function (info) {
+      if (!modalOpen) {
+        mouseLeaveTimer = setTimeout(clearHighlight, 60);
+      }
+    },
+
     eventClick: function (info) {
+      if (mouseLeaveTimer) { clearTimeout(mouseLeaveTimer); mouseLeaveTimer = null; }
+      if (highlightClearTimer) { clearTimeout(highlightClearTimer); highlightClearTimer = null; }
+      modalOpen = true;
+      highlightRelated(info.event);
+
       const event = info.event;
       const props = event.extendedProps;
 
@@ -380,7 +444,15 @@ document.addEventListener("DOMContentLoaded", function () {
         data.forEach((cal) => {
           const item = document.createElement("div");
           item.className = "legend-item";
-          item.innerHTML = `<span class="legend-dot" style="background:${cal.color}"></span>${cal.name}`;
+          item.title = cal.name;
+          item.setAttribute("aria-label", cal.name);
+          item.innerHTML = `<span class="legend-dot" style="background:${escapeHtml(cal.color)}"></span><span class="legend-name">${escapeHtml(cal.name)}</span>`;
+          item.addEventListener("click", function (e) {
+            e.stopPropagation();
+            const isExpanded = this.classList.contains("expanded");
+            legend.querySelectorAll(".legend-item.expanded").forEach(el => el.classList.remove("expanded"));
+            if (!isExpanded) this.classList.add("expanded");
+          });
           legend.appendChild(item);
         });
       })
@@ -393,6 +465,13 @@ document.addEventListener("DOMContentLoaded", function () {
 function closeModal() {
   document.getElementById("event-modal").classList.add("hidden");
   document.getElementById("modal-overlay").classList.add("hidden");
+  modalOpen = false;
+  if (isTouch()) {
+    if (highlightClearTimer) clearTimeout(highlightClearTimer);
+    highlightClearTimer = setTimeout(clearHighlight, 1500);
+  } else {
+    clearHighlight();
+  }
 }
 
 function showError(msg) {

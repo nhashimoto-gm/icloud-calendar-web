@@ -91,9 +91,36 @@ header h1 {
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0;
   font-size: 0.82rem;
   color: var(--text-secondary);
+  cursor: pointer;
+  padding: 3px 4px;
+  border-radius: 6px;
+  transition: background 0.15s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.legend-item:hover {
+  background: rgba(0,0,0,0.06);
+}
+html.dark .legend-item:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.legend-name {
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: max-width 0.25s ease, padding-left 0.25s ease;
+  padding-left: 0;
+  font-size: inherit;
+  color: inherit;
+}
+.legend-item:hover .legend-name,
+.legend-item.expanded .legend-name {
+  max-width: 200px;
+  padding-left: 6px;
 }
 
 .legend-dot {
@@ -500,6 +527,36 @@ html.dark .fc-toolbar-title { color: var(--text-primary) !important; }
   background: var(--overlay-bg);
 }
 .search-overlay.hidden { display: none; }
+
+/* ============================================
+   イベントハイライト（関連イベント強調表示）
+   ============================================ */
+
+/* ハイライトモード: 全イベントを薄くする */
+#calendar.fc-has-highlight [data-ev-title] {
+  opacity: 0.2;
+  filter: grayscale(25%);
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+/* 関連イベント: 通常表示に戻す */
+#calendar.fc-has-highlight [data-ev-title].fc-event-highlight {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* 月・週・日グリッドの関連イベント: 光彩で強調 */
+#calendar.fc-has-highlight .fc-daygrid-event[data-ev-title].fc-event-highlight,
+#calendar.fc-has-highlight .fc-timegrid-event[data-ev-title].fc-event-highlight {
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.88), 0 3px 10px rgba(0,0,0,0.28) !important;
+  transform: translateY(-1px);
+  z-index: 5 !important;
+  position: relative;
+}
+html.dark #calendar.fc-has-highlight .fc-daygrid-event[data-ev-title].fc-event-highlight,
+html.dark #calendar.fc-has-highlight .fc-timegrid-event[data-ev-title].fc-event-highlight {
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.3), 0 3px 10px rgba(0,0,0,0.55) !important;
+}
 
 /* Error bar */
 .error-bar {
