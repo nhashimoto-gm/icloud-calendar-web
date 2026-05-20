@@ -4,6 +4,7 @@ import caldav
 import os
 from datetime import datetime, date, timedelta
 import pytz
+from icalendar import Calendar as iCalendar
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".cal_QHscbPbHkHtU"))
 
@@ -87,6 +88,11 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
+
 @app.route("/api/events")
 def get_events():
     try:
@@ -112,7 +118,6 @@ def get_events():
                     start=start_dt, end=end_dt, expand=True
                 )
                 for event in cal_events:
-                    from icalendar import Calendar as iCalendar
                     cal = iCalendar.from_ical(event.data)
                     for component in cal.walk():
                         if component.name == "VEVENT":
@@ -128,6 +133,130 @@ def get_events():
         return jsonify({"error": str(e)}), 401
     except Exception as e:
         return jsonify({"error": f"カレンダーの取得に失敗しました: {str(e)}"}), 500
+
+
+@app.route("/api/suggestions")
+def get_suggestions():
+    import re
+    SPLIT = re.compile(r'[\s　\-－/／・,，、。「」【】『』()（）\[\]｜|:：〜～—‐]+')
+
+    try:
+        now = datetime.now(pytz.utc)
+        today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        start_dt = today
+        end_dt = today + timedelta(days=62)
+
+        client = get_client()
+        principal = client.principal()
+        calendars = principal.calendars()
+
+        freq = {}
+
+        def add(term):
+            term = term.strip()
+            if len(term) >= 2:
+                freq[term] = freq.get(term, 0) + 1
+
+        for idx, calendar in enumerate(calendars):
+            cal_name = (calendar.name or "").strip()
+            if cal_name:
+                add(cal_name)
+            try:
+                cal_events = calendar.date_search(start=start_dt, end=end_dt, expand=True)
+                for event in cal_events:
+                    cal = iCalendar.from_ical(event.data)
+                    for component in cal.walk():
+                        if component.name == "VEVENT":
+                            for field in ("summary", "location"):
+                                text = str(component.get(field, "")).strip()
+                                if not text:
+                                    continue
+                                add(text)
+                                for part in SPLIT.split(text):
+                                    if part:
+                                        add(part)
+            except Exception:
+                continue
+
+        sorted_terms = sorted(freq.items(), key=lambda x: (-x[1], -len(x[0])))
+        return jsonify([t for t, _ in sorted_terms[:150]])
+
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 401
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/search")
+def search_events():
+    q = request.args.get("q", "").strip()
+    if not q:
+        return jsonify([])
+
+    q_lower = q.lower()
+    full = request.args.get("full", "0") == "1"
+
+    try:
+        now = datetime.now(pytz.utc)
+        if full:
+            start_dt = now - timedelta(days=365)
+            end_dt = now + timedelta(days=365 * 2)
+        else:
+            today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            start_dt = today
+            end_dt = today + timedelta(days=62)
+
+        client = get_client()
+        principal = client.principal()
+        calendars = principal.calendars()
+
+        events = []
+        for idx, calendar in enumerate(calendars):
+            color = CALENDAR_COLORS[idx % len(CALENDAR_COLORS)]
+            cal_name = calendar.name or f"カレンダー {idx + 1}"
+            try:
+                cal_events = calendar.date_search(
+                    start=start_dt, end=end_dt, expand=True
+                )
+                for event in cal_events:
+                    cal = iCalendar.from_ical(event.data)
+                    for component in cal.walk():
+                        if component.name == "VEVENT":
+                            title = str(component.get("summary", ""))
+                            description = str(component.get("description", ""))
+                            location = str(component.get("location", ""))
+                            if (q_lower in title.lower() or
+                                    q_lower in description.lower() or
+                                    q_lower in location.lower() or
+                                    q_lower in cal_name.lower()):
+                                parsed = parse_vevent(component, cal_name, color)
+                                if parsed:
+                                    events.append(parsed)
+            except Exception:
+                continue
+
+        now_ts = now.timestamp()
+
+        def _ts(start_str):
+            try:
+                if "T" in start_str:
+                    return datetime.fromisoformat(start_str.replace("Z", "+00:00")).timestamp()
+                return datetime.fromisoformat(start_str).replace(tzinfo=pytz.utc).timestamp()
+            except Exception:
+                return 0
+
+        if full:
+            future = sorted([e for e in events if _ts(e["start"]) >= now_ts], key=lambda e: _ts(e["start"]))
+            past = sorted([e for e in events if _ts(e["start"]) < now_ts], key=lambda e: _ts(e["start"]), reverse=True)
+            return jsonify((future + past)[:200])
+        else:
+            events.sort(key=lambda e: _ts(e["start"]))
+            return jsonify(events[:200])
+
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 401
+    except Exception as e:
+        return jsonify({"error": f"検索に失敗しました: {str(e)}"}), 500
 
 
 @app.route("/api/calendars")

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About — iCloud カレンダー</title>
+  <script>
+    (function () {
+      if (localStorage.getItem('theme') !== 'light') {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    .about-main {
+      max-width: 760px;
+      margin: 32px auto;
+      padding: 0 16px 48px;
+    }
+    .about-card {
+      background: var(--bg-surface);
+      border-radius: 14px;
+      box-shadow: var(--shadow-card);
+      padding: 36px 40px;
+      margin-bottom: 20px;
+      transition: background-color 0.2s ease;
+    }
+    .about-card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .about-card p {
+      font-size: 0.93rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-bottom: 12px;
+    }
+    .about-card p:last-child { margin-bottom: 0; }
+
+    /* タイムライン */
+    .timeline {
+      list-style: none;
+      position: relative;
+      padding-left: 0;
+    }
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 7px;
+      top: 6px;
+      bottom: 6px;
+      width: 2px;
+      background: var(--border-color);
+      border-radius: 2px;
+    }
+    .timeline li {
+      position: relative;
+      padding-left: 28px;
+      margin-bottom: 24px;
+    }
+    .timeline li:last-child { margin-bottom: 0; }
+    .timeline li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 6px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      border: 2px solid #3788d8;
+    }
+    .timeline-date {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .timeline-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+    .timeline-body {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+    .timeline-body ul {
+      padding-left: 16px;
+      margin-top: 4px;
+    }
+    .timeline-body li {
+      padding-left: 0;
+      margin-bottom: 2px;
+    }
+    .timeline-body li::before { display: none; }
+
+    /* 技術スタック */
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .stack-item {
+      background: var(--bg-surface-2);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .stack-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .stack-value {
+      font-size: 0.88rem;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    /* ヘッダー内のリンク */
+    .about-header-link {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: color 0.15s, background 0.15s;
+      flex-shrink: 0;
+    }
+    .about-header-link:hover {
+      color: var(--text-primary);
+      background: var(--border-color);
+    }
+
+    @media (max-width: 767px) {
+      .about-main { margin: 12px auto; padding: 0 8px 32px; }
+      .about-card { padding: 22px 18px; }
+      .stack-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>iCloud カレンダー</h1>
+      <div style="flex:1"></div>
+      <a href="{{ url_for('index') }}" class="about-header-link">← カレンダーへ戻る</a>
+      <button class="theme-toggle" onclick="toggleTheme()"></button>
+    </div>
+  </header>
+
+  <main class="about-main">
+
+    <div class="about-card">
+      <h2>このアプリについて</h2>
+      <p>
+        iCloud カレンダーを、自分のサーバー上でシンプルに閲覧・検索できるプライベートな Web アプリです。
+        Apple の公式 Web インターフェースでは難しい細かいカスタマイズや、
+        深夜帯の折りたたみ・フルテキスト検索といった自分だけに必要な機能を自由に追加できることを目標に開発しました。
+      </p>
+      <p>
+        CalDAV プロトコルを通じて iCloud からカレンダーデータを取得し、
+        FullCalendar v6 を用いてブラウザ上に描画しています。
+        認証情報はサーバー上の環境変数ファイルにのみ保持し、外部へは一切送信しません。
+      </p>
+    </div>
+
+    <div class="about-card">
+      <h2>開発の経緯</h2>
+      <p>
+        iCloud.com のカレンダー画面は機能的ではあるものの、動作が重くなりがちで、
+        深夜の予定が多い日に表示範囲を手動でスクロールするのが煩わしいという不満が開発のきっかけです。
+      </p>
+      <p>
+        「CalDAV で取得できるなら Flask で表示するだけ」という単純な出発点から始まり、
+        <strong>Claude Code</strong>（Anthropic の AI コーディングアシスタント）との対話を重ねながら
+        機能を段階的に拡充してきました。
+        設計・実装・デバッグのほぼ全工程を Claude Code との協働で進めており、
+        本ページの内容も同様です。
+      </p>
+    </div>
+
+    <div class="about-card">
+      <h2>開発の変遷</h2>
+      <ul class="timeline">
+
+        <li>
+          <div class="timeline-date">2026年5月11日</div>
+          <div class="timeline-title">初回リリース</div>
+          <div class="timeline-body">
+            Flask + FullCalendar v6 の組み合わせで基本機能を実装。
+            <ul>
+              <li>月 / 週 / 日 / 一覧 ビュー切り替え</li>
+              <li>複数カレンダーの色分け表示・凡例</li>
+              <li>イベントクリックで詳細モーダル（場所・メモ）</li>
+              <li>深夜帯（21:00〜5:00）の折りたたみ表示</li>
+              <li>ダークモード対応</li>
+              <li>スマートフォン向けレスポンシブレイアウト</li>
+              <li>Nginx + Gunicorn によるサブパス（<code>/calendar/</code>）配信</li>
+            </ul>
+          </div>
+        </li>
+
+        <li>
+          <div class="timeline-date">2026年5月20日</div>
+          <div class="timeline-title">検索機能・サジェスト機能の追加</div>
+          <div class="timeline-body">
+            予定のフルテキスト検索と、入力補助のためのサジェストドロップダウンを実装。
+            <ul>
+              <li>タイトル・場所・説明・カレンダー名を対象としたキーワード検索</li>
+              <li>入力欄フォーカス時に頻出ワードをドロップダウン表示</li>
+              <li>入力に合わせてリアルタイムフィルタリング（↑↓キー選択対応）</li>
+              <li>ワード抽出は全角記号・波ダッシュ等の日本語デリミタに対応</li>
+              <li>初回検索は直近2ヶ月に絞り高速化、ボタンで過去1年〜2年先に拡大可能</li>
+            </ul>
+          </div>
+        </li>
+
+      </ul>
+    </div>
+
+    <div class="about-card">
+      <h2>技術スタック</h2>
+      <div class="stack-grid">
+        <div class="stack-item">
+          <div class="stack-label">Language</div>
+          <div class="stack-value">Python 3 / JavaScript</div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-label">Web Framework</div>
+          <div class="stack-value">Flask</div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-label">Calendar Protocol</div>
+          <div class="stack-value">CalDAV（iCloud）</div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-label">Calendar UI</div>
+          <div class="stack-value">FullCalendar v6</div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-label">Server</div>
+          <div class="stack-value">Gunicorn + Nginx</div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-label">OS</div>
+          <div class="stack-value">Ubuntu (Linux)</div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-label">AI Assistant</div>
+          <div class="stack-value">Claude Code (Anthropic)</div>
+        </div>
+        <div class="stack-item">
+          <div class="stack-label">Locale</div>
+          <div class="stack-value">日本語対応</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle("dark");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+      updateThemeButton(isDark);
+    }
+    function updateThemeButton(isDark) {
+      const btn = document.querySelector(".theme-toggle");
+      if (!btn) return;
+      btn.textContent = isDark ? "☀ ライト" : "☾ ダーク";
+    }
+    updateThemeButton(document.documentElement.classList.contains("dark"));
+  </script>
+</body>
+</html>

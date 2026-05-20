@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>iCloud カレンダー</title>
+  <script>
+    (function () {
+      if (localStorage.getItem('theme') !== 'light') {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
@@ -12,6 +19,9 @@
     <div class="header-inner">
       <h1>iCloud カレンダー</h1>
       <div id="calendar-legend"></div>
+      <button id="search-toggle" class="search-toggle-btn" onclick="toggleSearch()" aria-label="検索">🔍 検索</button>
+      <a href="{{ url_for('about') }}" target="_blank" rel="noopener" class="about-link">About</a>
+      <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()"></button>
     </div>
   </header>
 
@@ -32,6 +42,22 @@
     </div>
   </div>
   <div id="modal-overlay" class="hidden" onclick="closeModal()"></div>
+
+  <div id="search-panel" class="search-panel hidden">
+    <div class="search-panel-content">
+      <div class="search-input-row">
+        <span class="search-icon-glyph">🔍</span>
+        <input type="text" id="search-input" class="search-input-field"
+               placeholder="タイトル・場所・説明で検索..."
+               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        <button class="search-close-btn" onclick="closeSearch()">✕</button>
+      </div>
+      <div id="search-suggestions" class="search-suggestions hidden"></div>
+      <div id="search-feedback" class="search-feedback"></div>
+      <div id="search-results" class="search-results-list"></div>
+    </div>
+  </div>
+  <div id="search-overlay" class="search-overlay hidden" onclick="closeSearch()"></div>
 
   <div id="error-bar" class="error-bar hidden">
     <span id="error-message"></span>
