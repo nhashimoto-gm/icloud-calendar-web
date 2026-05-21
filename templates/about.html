@@ -243,6 +243,20 @@
           </div>
         </li>
 
+        <li>
+          <div class="timeline-date">2026年5月21日</div>
+          <div class="timeline-title">サーバー管理アーキテクチャの刷新 (Git Submodule化)</div>
+          <div class="timeline-body">
+            保守性と再現性の向上を目的とした、サーバー全体のディレクトリ構造および構成管理の大幅な見直しを実施。
+            <ul>
+              <li>Infrastructure as Code (IaC) の思想に基づき、独立していた各アプリをマスターリポジトリ配下の Git Submodule として集約</li>
+              <li>実体（<code>/home/nha/apps/</code>）と公開パス（<code>/var/www/</code>）をシンボリックリンクで分離する論理構造へ移行</li>
+              <li>.gitignore の最適化による不要な追跡ファイルの排除と、秘匿設定ファイルの厳格な権限管理（640）の適用</li>
+              <li>マスターリポジトリ一つでサーバー全環境を復元可能な「設計図」としての構成を確立</li>
+            </ul>
+          </div>
+        </li>
+
       </ul>
     </div>
 
